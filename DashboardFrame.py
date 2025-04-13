@@ -17,11 +17,40 @@ class DashboardFrame(customtkinter.CTkFrame):
         self.data = DataProcess(parent=self)
         
         # Timer frame
+      
         timer_frame = customtkinter.CTkFrame(master=self, fg_color="transparent")
         timer_frame.pack(fill="both", pady=10, side="bottom")
+        
         self.timer_label = customtkinter.CTkLabel(master=timer_frame, text="Timer: 0:00", font=("Arial",30))
-        self.timer = TimerFunction(parent=self, timer_label = self.timer_label)
-        self.timer_label.pack(pady=10, anchor="center")
+       
+        self.one_minute_var = customtkinter.BooleanVar()
+        self.one_minute_test = customtkinter.CTkCheckBox(master= timer_frame, 
+        text ="1 minute test",
+        variable=self.one_minute_var)
+        self.one_minute_test.grid(row=0, column=0, padx=5, pady=10)
+        
+        self.three_minute_var = customtkinter.BooleanVar()
+        self.three_minute_test = customtkinter.CTkCheckBox(master = timer_frame,
+        text = "3 minute test",
+        variable=self.three_minute_var)
+        self.three_minute_test.grid(row=0, column=1, padx=5, pady=10)
+        
+        self.five_minute_var = customtkinter.BooleanVar()
+        self.five_minute_test = customtkinter.CTkCheckBox(master= timer_frame,
+        text="5 minute test",
+        variable=self.five_minute_var)
+        self.five_minute_test.grid(row=0, column=2, padx=(0,10), pady=10)
+        self.timer = TimerFunction(parent=self, timer_label = self.timer_label, one_minute_test=self.one_minute_test, three_minute_test= self.three_minute_test, five_minute_test= self.five_minute_test,
+        one_minute_var= self.one_minute_var,
+        three_minute_var=self.three_minute_var,
+        five_minute_var=self.five_minute_var)
+        
+       
+        self.timer_label.grid(row=0, column=5, padx=5, pady=10)
+        
+        self.one_minute_test.configure(command=self.timer.one_minute_function)
+        self.three_minute_test.configure(command=self.timer.three_minute_function)
+        self.five_minute_test.configure(command=self.timer.five_minute_function)
         
             
         # Button frame
@@ -139,6 +168,3 @@ class DashboardFrame(customtkinter.CTkFrame):
     def stop_auto_refresh(self):
         if hasattr(self, "after_id"):
             self.after_cancel(self.after_id)
-
-    
-    
