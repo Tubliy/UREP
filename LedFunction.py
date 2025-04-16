@@ -12,10 +12,11 @@ class LedFunction:
         self.canvases = [None] * len(buttons)
         self.figures = [None] * len(buttons)
 
-        # Grid config for responsive layout
-        for col in range(3):
-            self.graph_frame.grid_columnconfigure(col, weight=1, uniform="graph")
-        self.graph_frame.grid_rowconfigure(0, weight=1)
+        # Grid config for responsive layout (safe check)
+        if self.graph_frame and self.graph_frame.winfo_exists():
+            for col in range(3):
+                self.graph_frame.grid_columnconfigure(col, weight=1, uniform="graph")
+            self.graph_frame.grid_rowconfigure(0, weight=1)
 
     def toggle_led(self, index):
         self.led_states[index] = not self.led_states[index]
@@ -31,11 +32,14 @@ class LedFunction:
         self.rearrange_graphs()
 
     def show_graph(self, index):
+        if not self.graph_frame or not self.graph_frame.winfo_exists():
+            return
+
         if self.graph_widgets[index]:
             return  # Already shown
 
         fig, ax = plt.subplots(figsize=(3, 2), dpi=80)
-        ax.plot([0, 1, 2], [0, index + 1, index * 2 + 1], 
+        ax.plot([0, 1, 2], [0, index + 1, index * 2 + 1],
                 color='#00D68F', linewidth=1.5, marker='o', markersize=4)
         ax.set_facecolor('#FAFAFA')
         ax.grid(True, linestyle=':', alpha=0.5)
@@ -61,7 +65,9 @@ class LedFunction:
         self._destroy_graph(index)
 
     def rearrange_graphs(self):
-        # Clear all existing grid placements
+        if not self.graph_frame or not self.graph_frame.winfo_exists():
+            return
+
         for widget in self.graph_widgets:
             if widget:
                 widget.grid_forget()
@@ -109,3 +115,6 @@ class LedFunction:
     def cleanup(self):
         for i in range(len(self.led_buttons)):
             self._destroy_graph(i)
+        self.graph_frame = None  # prevent reuse after destroy
+
+    
