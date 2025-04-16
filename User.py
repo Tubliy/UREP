@@ -2,13 +2,16 @@ import customtkinter
 import random
 
 class User(customtkinter.CTkToplevel):
-    def __init__(self, parent):
+    def __init__(self, parent,instructions,interval):
         super().__init__(parent)
 
         self.parent = parent
         self.title("User Instructions")
         self.existing = None
         self.existingcolor = None
+        self.instructions = instructions
+        self.interval = interval
+        
         self.colors = [
             "#A3D2CA", "#FFB4A2", "#7F95D1", "#D9BF77", "#F67280",
             "#355C7D", "#F8B195", "#99E2B4", "#FFDAC1", "#6A0572",
@@ -19,11 +22,6 @@ class User(customtkinter.CTkToplevel):
 
         userwidth = 500
         userheight = 500
-        self.instruction = [
-            "Do a bicep curl",
-            "Do a reverse curl",
-            "Hold the dumbbell in place"
-        ]
 
         self.resizable(False, False)
         
@@ -46,9 +44,9 @@ class User(customtkinter.CTkToplevel):
         self.cycle_instructions()
 
     def choosing_instruction(self):
-        choice = random.choice(self.instruction)
+        choice = random.choice(self.instructions)
         while hasattr(self, "existing") and choice == self.existing:
-            choice = random.choice(self.instruction)
+            choice = random.choice(self.instructions)
         self.existing = choice
         return choice
 
@@ -63,5 +61,5 @@ class User(customtkinter.CTkToplevel):
         self.existingcolor = color
         self.configure(fg_color=color)
 
-        self.after(10000, self.cycle_instructions)  # Change every 10 seconds
+        self.after(self.interval, self.cycle_instructions)  # Change every 10 seconds
 

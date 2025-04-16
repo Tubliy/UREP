@@ -17,13 +17,16 @@ class TimerFunction:
         self.timerrunningtext = "Timer is not running!"
 
 
-    def start(self):
+    def start(self, timer= None, instructions=None, interval=None):
         if not self.running:
-            self.user_window = User(parent=self.root)
             self.starttime = time.time() - self.elapsedtime
             self.running = True
+            self.timer_limit = timer
             self.updatenow()
             self.updatetimer()
+            
+            if instructions and interval:
+                self.user_window = User(parent=self.root, instructions=instructions, interval=interval)
         else:
             Popups(self.root, "Already started.", type="error")
 
@@ -41,6 +44,14 @@ class TimerFunction:
     def updatetimer(self):
         if self.running:
             self.elapsedtime = int(time.time() - self.starttime)
+            
+            if self.timer_limit and self.elapsedtime >= self.timer_limit:
+                self.timer_label.configure(
+                    text=f"Timer: {int(self.timer_limit // 60)}:{int(self.timer_limit % 60):02d}"
+                 )
+                self.stop()
+                return
+        
             try:
                 self.timer_label.configure(
                     text=f"Timer: {self.elapsedtime // 60}:{self.elapsedtime % 60:02d}",
@@ -68,3 +79,5 @@ class TimerFunction:
             self.timer_label.configure(text="Timer: 0:00", font=self.font)
         except (customtkinter.CTkTclError, Exception):
             pass  # Timer label doesn't exist (view was switched)
+
+    

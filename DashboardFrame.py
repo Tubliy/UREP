@@ -4,8 +4,11 @@ from TimerFunction import TimerFunction
 from DataProcess import DataProcess
 from SerialFunction import SerialFunction
 from LedFunction import LedFunction
+from User import User
 import winsound
 from Popups import Popups
+import os
+import datetime
 
 class DashboardFrame(customtkinter.CTkFrame):
     def __init__(self, master, controller, **kwargs):
@@ -13,6 +16,8 @@ class DashboardFrame(customtkinter.CTkFrame):
         self.controller = controller
         self.configure(width=500)
         self.pack_propagate(False)
+        
+        self.directory = os.path.join(os.path.dirname(__file__), "files")
         
         
 
@@ -62,7 +67,8 @@ class DashboardFrame(customtkinter.CTkFrame):
 
         self.plan_input = customtkinter.CTkEntry(master=timer_frame,
         width=150,
-        placeholder_text="e.g. Pushups")
+        placeholder_text="e.g. Pushups",
+        font=("Arial",14))
         self.plan_input.grid(row=1,column=1,padx=5, pady=10)
         
         interval_label = customtkinter.CTkLabel(master=timer_frame,
@@ -77,8 +83,16 @@ class DashboardFrame(customtkinter.CTkFrame):
         
         self.submit_button = customtkinter.CTkButton(master=timer_frame,
         text="Submit",
+        command=self.write_file
         )
         self.submit_button.grid(row=2, column=2, padx=5, pady=10)
+        
+        self.exercise_pick = customtkinter.CTkComboBox(master=timer_frame,
+        command=self.load_selected_file,
+        values=[])
+        
+        self.exercise_pick.set(" Choose Exercise")
+        self.exercise_pick.grid(row=1, column=2, padx=5, pady=10)
         
         self.timer = TimerFunction(
             parent=self,
@@ -116,7 +130,7 @@ class DashboardFrame(customtkinter.CTkFrame):
         self.connection_display.set(0)
         self.connection_display.grid(row=0, column=4, padx=(0, 10), pady=10)
 
-        customtkinter.CTkButton(self.button_frame, text="Start", command=self.timer.start).grid(row=1, column=0, padx=5, pady=10)
+        customtkinter.CTkButton(self.button_frame, text="Start", command=self.start_timer_and_open_user).grid(row=1, column=0, padx=5, pady=10)
         customtkinter.CTkButton(self.button_frame, text="Stop", command=self.timer.stop).grid(row=1, column=1, padx=5, pady=10)
         customtkinter.CTkButton(self.button_frame, text="Reset", command=self.timer.reset).grid(row=1, column=2, padx=5, pady=10)
         customtkinter.CTkButton(self.button_frame, text="Export", command=self.data.export).grid(row=1, column=3, padx=5, pady=10)
@@ -133,6 +147,8 @@ class DashboardFrame(customtkinter.CTkFrame):
        # === After creating self.graph_frame ===
         if hasattr(self.controller, "leftframe") and self.controller.leftframe:
             self.controller.leftframe.init_led_function(self.graph_frame)
+            
+        self.update_file_list()
 
 
     def show_settings_view(self):
@@ -161,6 +177,8 @@ class DashboardFrame(customtkinter.CTkFrame):
         text=current_text,
         command=self.no_sound)
         self.sound_button.grid(row=1, column=2, padx=10, pady=10)
+        
+        
         
     def connect_button_clicked(self):
         self.ser = self.serialfunction.try_connect(self.port_var.get())
@@ -203,5 +221,80 @@ class DashboardFrame(customtkinter.CTkFrame):
     def no_sound(self):
        self.sound_enabled = not self.sound_enabled
        new_text = "Sound: Off" if not self.sound_enabled else "Sound: On"
-       self.sound_button.configure(text=new_text)\
+       self.sound_button.configure(text=new_text)
     
+    
+        
+    def write_file(self):
+         
+        self.timeinput = self.time_input.get()
+        self.planinput = self.plan_input.get()
+        self.intervalinput = self.interval_input.get()
+        
+        if not os.path.exists(self.directory):
+            os.makedirs(self.directory, exist_ok=True)
+        
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        
+        safe_plan = "".join(c for c in self.planinput if c.isalnum() or c in (' ',"-","_")).rstrip()
+        filename = f"{timestamp}_{safe_plan}.txt"
+        
+        filepath = os.path.join(self.directory,filename)
+        
+        with open(filepath, 'w') as f:
+            f.write(f"Time: {self.timeinput}\n")
+            f.write(f"Plan: {self.planinput}\n")
+            f.write(f"Interval: {self.intervalinput}\n")
+            
+        self.time_input.delete(0, "end")
+        self.plan_input.delete(0, "end")
+        self.interval_input.delete(0, "end")
+        
+        self.content_area.focus_set()
+        self.update_file_list()
+        
+    def update_file_list(self):
+        if os.path.exists(self.directory):
+            files = [f for f in os.listdir(self.directory) if f.endswith(".txt")]
+            self.exercise_pick.configure(values=files)
+        else:
+            self.exercise_pick.configure(values=[])
+    
+    
+    def load_selected_file(self, selected_filename):
+        filepath = os.path.join(self.directory, selected_filename)
+        try:
+            with open(filepath, 'r') as f:
+                lines = f.readlines()
+                self.time = lines[0].split(":")[1].strip()
+                self.plan = lines[1].split(":")[1].strip()
+                self.interval = lines[2].split(":")[1].strip()
+                
+            if self.interval.lower().endswith("s"):
+                self.interval = int(float(self.interval[:-1].strip()) * 1000)
+            else:
+                self.interval = int(float(self.interval.strip) * 1000)
+                
+                
+            self.time_input.delete(0, "end")
+            self.plan_input.delete(0,"end")
+            self.interval_input.delete(0,"end")
+            self.content_area.focus_set()
+                    
+            self.time_input.insert(0, self.time)
+            self.plan_input.insert(0, self.plan)
+            self.interval_input.insert(0, str(self.interval))
+                
+        except Exception as e:
+          print("Error loading files")
+                
+    def start_timer_and_open_user(self):
+        if hasattr(self, "plan") and hasattr(self, "interval"):
+            instructions = [f"Do {self.plan}", "Rest"]
+            minutes_only = int(self.time.split(":")[0])
+            
+            actualtime = minutes_only * 60
+            self.timer.start(timer= actualtime, instructions=instructions, interval=self.interval)
+            
+        else:
+            self.timer.start()
