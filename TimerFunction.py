@@ -5,13 +5,7 @@ from User import User
 
 class TimerFunction:
     def __init__(self, parent, 
-        timer_label, 
-        one_minute_test=None, 
-        three_minute_test=None,
-        five_minute_test=None,
-        one_minute_var=None,
-        three_minute_var=None,
-        five_minute_var=None):
+        timer_label):
 
         self.elapsedtime = 0
         self.running = False
@@ -22,13 +16,6 @@ class TimerFunction:
         self.root = self.timer_label.winfo_toplevel()
         self.timerrunningtext = "Timer is not running!"
 
-        self.one_minute_test = one_minute_test
-        self.three_minute_test = three_minute_test
-        self.five_minute_test = five_minute_test
-
-        self.one_minute_var = one_minute_var
-        self.three_minute_var = three_minute_var
-        self.five_minute_var = five_minute_var
 
     def start(self):
         if not self.running:
@@ -63,9 +50,6 @@ class TimerFunction:
                 self.running = False
                 return  # Exit early if widget is gone
 
-            self.one_minute_function()
-            self.three_minute_function()
-            self.five_minute_function()
 
             self.parent.after(1000, self.updatetimer)
 
@@ -84,24 +68,3 @@ class TimerFunction:
             self.timer_label.configure(text="Timer: 0:00", font=self.font)
         except (customtkinter.CTkTclError, Exception):
             pass  # Timer label doesn't exist (view was switched)
-
-    def one_minute_function(self):
-        if self.one_minute_var and self.one_minute_var.get():
-            if self.elapsedtime == 60:
-                self.stop()
-                if self.one_minute_test:
-                    self.one_minute_test.deselect()
-
-    def three_minute_function(self):
-        if self.three_minute_var and self.three_minute_var.get():
-            if self.elapsedtime == 180:
-                self.stop()
-                if self.three_minute_test:
-                    self.three_minute_test.deselect()
-
-    def five_minute_function(self):
-        if self.five_minute_var and self.five_minute_var.get():
-            if self.elapsedtime == 300:
-                self.stop()
-                if self.five_minute_test:
-                    self.five_minute_test.deselect()

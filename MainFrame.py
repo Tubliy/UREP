@@ -98,11 +98,6 @@ class MainFrame(customtkinter.CTkFrame):
             customtkinter.set_appearance_mode("light")
             self.modeswitch.configure(text="Light Mode")
 
-    def init_led_function(self, graph_frame):
-        """Call this once DashboardFrame has created the graph_frame."""
-        self.graph_frame = graph_frame
-        self.ledfunction = LedFunction(self.led_buttons, self.graph_frame)
-
     def toggle_led_graph(self, index):
         """Safe toggle handler that waits for LedFunction to be ready."""
         if self.ledfunction:
@@ -112,4 +107,4 @@ class MainFrame(customtkinter.CTkFrame):
         if self.ledfunction:
          self.ledfunction.cleanup()
         self.graph_frame = graph_frame
-        self.ledfunction = LedFunction(self.led_buttons, self.graph_frame)
+        self.ledfunction = LedFunction(self.dashboard_frame,self.led_buttons, self.graph_frame)

@@ -3,16 +3,18 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class LedFunction:
-    def __init__(self, buttons, graph_frame):
+    def __init__(self,parent,buttons, graph_frame,):
         self.led_states = [False] * len(buttons)
         self.led_buttons = buttons
         self.graph_frame = graph_frame
+        self.parent = parent
+        
 
         self.graph_widgets = [None] * len(buttons)
         self.canvases = [None] * len(buttons)
         self.figures = [None] * len(buttons)
 
-        # Grid config for responsive layout (safe check)
+        # Prepare grid layout
         if self.graph_frame and self.graph_frame.winfo_exists():
             for col in range(3):
                 self.graph_frame.grid_columnconfigure(col, weight=1, uniform="graph")
@@ -23,20 +25,16 @@ class LedFunction:
 
         if self.led_states[index]:
             self.led_buttons[index].configure(fg_color="#00D68F", hover_color="#CC3B3B")
-            winsound.PlaySound("sounds/c6.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
-            self.show_graph(index)
+            if getattr(self.parent, "sound_enabled", True):
+                winsound.PlaySound("sounds/c6.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
         else:
             self.led_buttons[index].configure(fg_color="#FF4C4C", hover_color="#00B37D")
-            self.hide_graph(index)
 
         self.rearrange_graphs()
 
     def show_graph(self, index):
         if not self.graph_frame or not self.graph_frame.winfo_exists():
             return
-
-        if self.graph_widgets[index]:
-            return  # Already shown
 
         fig, ax = plt.subplots(figsize=(3, 2), dpi=80)
         ax.plot([0, 1, 2], [0, index + 1, index * 2 + 1],
@@ -68,25 +66,43 @@ class LedFunction:
         if not self.graph_frame or not self.graph_frame.winfo_exists():
             return
 
-        for widget in self.graph_widgets:
-            if widget:
-                widget.grid_forget()
+        # Destroy all current graphs
+        for i in range(len(self.graph_widgets)):
+            if self.graph_widgets[i]:
+                self.graph_widgets[i].destroy()
+                self.graph_widgets[i] = None
+            if self.canvases[i]:
+                try:
+                    self.canvases[i].get_tk_widget().destroy()
+                    self.canvases[i]._tkcanvas.destroy()
+                except:
+                    pass
+                self.canvases[i] = None
+            if self.figures[i]:
+                plt.close(self.figures[i])
+                self.figures[i] = None
 
+        # Rebuild only active graphs
         visible = [i for i, state in enumerate(self.led_states) if state]
-        active_count = len(visible)
+
+        for idx in visible:
+            self.show_graph(idx)
 
         for i, idx in enumerate(visible):
-            row = i // 3
-            col = i % 3
             widget = self.graph_widgets[idx]
-            if widget:
-                if active_count == 1:
-                    self.figures[idx].set_size_inches(6, 3)
-                    widget.grid(row=0, column=0, columnspan=3, sticky="nsew", padx=20, pady=5)
-                else:
-                    self.figures[idx].set_size_inches(3, 2)
-                    widget.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
-                self.canvases[idx].draw()
+            if not widget:
+                continue
+
+            if len(visible) == 1:
+                self.figures[idx].set_size_inches(6, 3)
+                widget.grid(row=0, column=0, columnspan=3, sticky="nsew", padx=20, pady=5)
+            else:
+                row = i // 3
+                col = i % 3
+                self.figures[idx].set_size_inches(3, 2)
+                widget.grid(row=row, column=col, sticky="nsew", padx=5, pady=5)
+
+            self.canvases[idx].draw()
 
     def _destroy_graph(self, index):
         if self.graph_widgets[index]:
@@ -100,7 +116,6 @@ class LedFunction:
             try:
                 self.canvases[index].get_tk_widget().destroy()
                 self.canvases[index]._tkcanvas.destroy()
-                self.canvases[index].close_event()
             except:
                 pass
             self.canvases[index] = None
@@ -115,6 +130,4 @@ class LedFunction:
     def cleanup(self):
         for i in range(len(self.led_buttons)):
             self._destroy_graph(i)
-        self.graph_frame = None  # prevent reuse after destroy
-
-    
+        self.graph_frame = None

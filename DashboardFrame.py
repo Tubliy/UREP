@@ -13,12 +13,15 @@ class DashboardFrame(customtkinter.CTkFrame):
         self.controller = controller
         self.configure(width=500)
         self.pack_propagate(False)
+        
+        
 
         self.content_area = customtkinter.CTkFrame(master=self, fg_color="transparent")
         self.content_area.pack(fill="both", expand=True)
 
         self.ledfunction = None  # placeholder
         self.timer = None  # placeholder
+        self.sound_enabled = True
 
         
 
@@ -39,35 +42,51 @@ class DashboardFrame(customtkinter.CTkFrame):
 
         self.timer_label = customtkinter.CTkLabel(master=timer_frame, text="Timer: 0:00", font=("Arial", 30))
 
-        self.one_minute_var = customtkinter.BooleanVar()
-        self.three_minute_var = customtkinter.BooleanVar()
-        self.five_minute_var = customtkinter.BooleanVar()
+    
 
-        self.one_minute_test = customtkinter.CTkCheckBox(timer_frame, text="1 minute test", variable=self.one_minute_var)
-        self.one_minute_test.grid(row=0, column=0, padx=5, pady=10)
+        time_label = customtkinter.CTkLabel(master=timer_frame,
+        text="Time:",
+        font=("Arial",14))
+        time_label.grid(row=0, column=0, padx=(10,5), pady=10, sticky="e")
+        
+       
+        self.time_input = customtkinter.CTkEntry(master=timer_frame,
+        placeholder_text="e.g. 3:00",
+        font=("Arial",14))
+        self.time_input.grid(row=0, column=1, padx=5, pady=10)
+       
+        plan_label = customtkinter.CTkLabel(master=timer_frame,
+        text="Exercise Plan:",
+        font=("Arial",14))
+        plan_label.grid(row=1,column=0,padx=(10,5),pady=10, sticky="e")
 
-        self.three_minute_test = customtkinter.CTkCheckBox(timer_frame, text="3 minute test", variable=self.three_minute_var)
-        self.three_minute_test.grid(row=0, column=1, padx=5, pady=10)
-
-        self.five_minute_test = customtkinter.CTkCheckBox(timer_frame, text="5 minute test", variable=self.five_minute_var)
-        self.five_minute_test.grid(row=0, column=2, padx=(0, 10), pady=10)
-
+        self.plan_input = customtkinter.CTkEntry(master=timer_frame,
+        width=150,
+        placeholder_text="e.g. Pushups")
+        self.plan_input.grid(row=1,column=1,padx=5, pady=10)
+        
+        interval_label = customtkinter.CTkLabel(master=timer_frame,
+        text="Interval:",
+        font=("Arial",14))
+        interval_label.grid(row=2, column=0, padx=(10,5), pady=10, sticky="e")
+        
+        self.interval_input = customtkinter.CTkEntry(master=timer_frame,
+        placeholder_text="e.g. 60s",
+        font=("Arial",14))
+        self.interval_input.grid(row=2, column=1, padx=5, pady=10)
+        
+        self.submit_button = customtkinter.CTkButton(master=timer_frame,
+        text="Submit",
+        )
+        self.submit_button.grid(row=2, column=2, padx=5, pady=10)
+        
         self.timer = TimerFunction(
             parent=self,
-            timer_label=self.timer_label,
-            one_minute_test=self.one_minute_test,
-            three_minute_test=self.three_minute_test,
-            five_minute_test=self.five_minute_test,
-            one_minute_var=self.one_minute_var,
-            three_minute_var=self.three_minute_var,
-            five_minute_var=self.five_minute_var
+            timer_label=self.timer_label
         )
 
         self.timer_label.grid(row=0, column=5, padx=5, pady=10)
 
-        self.one_minute_test.configure(command=self.timer.one_minute_function)
-        self.three_minute_test.configure(command=self.timer.three_minute_function)
-        self.five_minute_test.configure(command=self.timer.five_minute_function)
 
         # === Serial/Port Section ===
         self.button_frame = customtkinter.CTkFrame(master=self.content_area, fg_color="transparent")
@@ -137,24 +156,28 @@ class DashboardFrame(customtkinter.CTkFrame):
         )
         back_button.grid(row=0, column=0, padx=10, pady=10)
         
-        sound_button = customtkinter.CTkButton(master=self.content_area,
-        text="No sound")
-        sound_button.grid(row=1, column=2, padx=10, pady=10)
+        current_text = "Sound: Off" if not self.sound_enabled else "Sound: On"
+        self.sound_button = customtkinter.CTkButton(master=self.content_area,
+        text=current_text,
+        command=self.no_sound)
+        self.sound_button.grid(row=1, column=2, padx=10, pady=10)
         
-
     def connect_button_clicked(self):
         self.ser = self.serialfunction.try_connect(self.port_var.get())
         if self.serialfunction.connected:
-            winsound.PlaySound("sounds/orb.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
-            self.connection_label.configure(text="Connected:")
-            self.connection_display.configure(progress_color="#00D68F")
-            self.connection_display.set(1.0)
+             if self.sound_enabled:
+                 winsound.PlaySound("sounds/orb.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
+                
+             self.connection_label.configure(text="Connected:")
+             self.connection_display.configure(progress_color="#00D68F")
+             self.connection_display.set(1.0)
         else:
             self.connection_display.set(0)
 
     def disconnect_button_clicked(self):
         if self.serialfunction.disconnect_serial():
-            winsound.PlaySound("sounds/hit.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
+            if self.sound_enabled:
+                winsound.PlaySound("sounds/hit.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
             self.connection_label.configure(text="Disconnected")
             self.connection_display.configure(progress_color="#FF0000")
             self.connection_display.set(0)
@@ -176,3 +199,9 @@ class DashboardFrame(customtkinter.CTkFrame):
 
     def settings_clicked(self):
         self.show_settings_view()
+        
+    def no_sound(self):
+       self.sound_enabled = not self.sound_enabled
+       new_text = "Sound: Off" if not self.sound_enabled else "Sound: On"
+       self.sound_button.configure(text=new_text)\
+    
