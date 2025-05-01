@@ -1,0 +1,3 @@
+Time: 5:00
+Plan: Pushups
+Interval: 30s

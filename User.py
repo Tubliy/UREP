@@ -20,7 +20,7 @@ class User(customtkinter.CTkToplevel):
 
         self.configure(fg_color=random.choice(self.colors))
 
-        userwidth = 500
+        userwidth = 1000
         userheight = 500
 
         self.resizable(False, False)
@@ -36,7 +36,7 @@ class User(customtkinter.CTkToplevel):
             text=self.choosing_instruction(),
             font=("Arial", 36)
         )
-        self.instruction_label.pack(anchor="center", pady=10)
+        self.instruction_label.pack(anchor="center", padx=5, pady=10)
 
         self.geometry(f"{userwidth}x{userheight}+{x}+{y}")
 
