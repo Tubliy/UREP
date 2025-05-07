@@ -1,0 +1,3 @@
+Time: 1
+Plan: Curls
+Interval: 10000
